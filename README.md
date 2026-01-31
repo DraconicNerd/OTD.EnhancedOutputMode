@@ -4,6 +4,7 @@
 
 - Allow plugins to directly access tablet and aux reports.
 - Add support for touch for supported tablets
+- Multitouch Support on the 0.6.x branch
 - Has support for the base OpenTabletDriver output modes as well as VoiD's (Windows Ink & Vmulti)
 
 ## Supported Versions
