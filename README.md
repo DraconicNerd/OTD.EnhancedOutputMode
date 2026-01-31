@@ -4,6 +4,7 @@
 
 - Allow plugins to directly access tablet and aux reports.
 - Add support for touch for supported tablets
+- Windows multitouch Support on the 0.6.x branch
 - Has support for the base OpenTabletDriver output modes as well as VoiD's (Windows Ink & Vmulti)
 
 ## Supported Versions
@@ -22,7 +23,7 @@
 Touch is disabled by default, to prevent any conflict of inputs between the pen and your hand.
 To enable touch, you can follow these steps:
 
-- Go to the `Tools` tab in OpenTabletDriver (`Filters` in 0.5.3.3),
+- Go to the `Filters` tab in OpenTabletDriver;
 - Click on Touch Settings, tick `Enable Touch Settings` & `Toggle Touch`,
 
 ![Touch Settings](/images/Touch-Settings.png)
@@ -36,14 +37,9 @@ In which case you will need to set these values manually using the following ste
 - Write these values in `MaxX` & `MaxY` in the `Touch Settings` plugin.
 - Save & Apply and it should work as expected.
 
-## What about Touch Gestures
-
-For Touch Gestures, see the [Touch Gestures Plugin](https://github.com/Mrcubix/Touch-Gestures) (Available via the Plugin Manager)
-
 ## Touch Supported Tablets (Tested)
 
-- Wacom PTH-x51,
-- Wacom CTH-xxx,
+- Wacom PTH-860,
 
 ## How to make a plugin
 
