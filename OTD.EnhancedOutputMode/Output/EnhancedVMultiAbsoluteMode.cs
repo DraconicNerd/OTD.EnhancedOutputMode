@@ -7,6 +7,7 @@ using OpenTabletDriver.Plugin.Platform.Pointer;
 using OpenTabletDriver.Plugin.Tablet;
 using OTD.EnhancedOutputMode.Output;
 using OTD.EnhancedOutputMode.Pointers.VMulti;
+using OTD.EnhancedOutputMode.Touch;
 
 namespace VoiDPlugins.OutputMode
 {
@@ -15,6 +16,7 @@ namespace VoiDPlugins.OutputMode
     {
         private VMultiAbsolutePointer? _pointer;
         private IVirtualScreen? _virtualScreen;
+        private MultiTouchHandler? _multiTouchHandler;
 
         [Resolved]
         public IServiceProvider ServiceProvider
@@ -36,6 +38,18 @@ namespace VoiDPlugins.OutputMode
         {
             get => _pointer!;
             set { }
+        }
+
+        protected override MultiTouchHandler? MultiTouchHandler
+        {
+            get
+            {
+                if (_multiTouchHandler == null && _virtualScreen != null)
+                {
+                    _multiTouchHandler = new MultiTouchHandler(_virtualScreen);
+                }
+                return _multiTouchHandler;
+            }
         }
     }
 }

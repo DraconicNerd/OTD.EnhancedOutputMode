@@ -14,6 +14,7 @@ using OpenTabletDriver.Plugin.Timing;
 using OTD.EnhancedOutputMode.Lib.Interface;
 using OTD.EnhancedOutputMode.Lib.Tools;
 using OTD.EnhancedOutputMode.Lib.Tablet;
+using OTD.EnhancedOutputMode.Touch;
 
 namespace OTD.EnhancedOutputMode.Output
 {
@@ -48,6 +49,21 @@ namespace OTD.EnhancedOutputMode.Output
         public IList<IAuxFilter> AuxFilters { get; set; } = Array.Empty<IAuxFilter>();
 
         public TouchSettings TouchSettings { get; private set; } = TouchSettings.Default;
+
+        /// <summary>
+        /// Multi-touch handler for injecting touch input. Override in derived classes to enable multi-touch.
+        /// </summary>
+        protected virtual MultiTouchHandler? MultiTouchHandler => null;
+
+        /// <summary>
+        /// Screen bounds min for multi-touch handler
+        /// </summary>
+        protected Vector2 TouchBoundsMin => min;
+
+        /// <summary>
+        /// Screen bounds max for multi-touch handler
+        /// </summary>
+        protected Vector2 TouchBoundsMax => max;
 
         #region Initialization
 
@@ -153,8 +169,20 @@ namespace OTD.EnhancedOutputMode.Output
 
                 // Check if the pen was in range recently and skip report if it was
                 if (TouchSettings.DisableWhenPenInRange && _penStopwatch.Elapsed < TouchSettings.PenResetTimeSpan)
+                {
+                    // Release any active touches when pen comes in range
+                    MultiTouchHandler?.ReleaseAllTouches();
                     return;
+                }
 
+                // Use multi-touch handler if available
+                if (MultiTouchHandler != null)
+                {
+                    MultiTouchHandler.ProcessTouchReport(touchReport.Touches, TouchTransformationMatrix, min, max);
+                    return; // Don't process touch as single-touch cursor
+                }
+
+                // Fall back to single-touch cursor behavior
                 _touchConvertedReport.HandleReport(touchReport, _lastPos);
 
                 if (_touchConvertedReport.InRange)

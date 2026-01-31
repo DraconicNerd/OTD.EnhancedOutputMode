@@ -6,6 +6,7 @@ using OpenTabletDriver.Plugin.Platform.Display;
 using OpenTabletDriver.Plugin.Platform.Pointer;
 using OpenTabletDriver.Plugin.Tablet;
 using OTD.EnhancedOutputMode.Pointers.WindowsInk;
+using OTD.EnhancedOutputMode.Touch;
 
 namespace OTD.EnhancedOutputMode.Output
 {
@@ -14,6 +15,7 @@ namespace OTD.EnhancedOutputMode.Output
     {
         private WindowsInkAbsolutePointer? _pointer;
         private IVirtualScreen? _virtualScreen;
+        private MultiTouchHandler? _multiTouchHandler;
 
         [BooleanProperty("Sync", "Synchronize OS cursor with Windows Ink's current position when pen goes out of range.")]
         [DefaultPropertyValue(true)]
@@ -47,6 +49,18 @@ namespace OTD.EnhancedOutputMode.Output
         {
             get => _pointer!;
             set { }
+        }
+
+        protected override MultiTouchHandler? MultiTouchHandler
+        {
+            get
+            {
+                if (_multiTouchHandler == null && _virtualScreen != null)
+                {
+                    _multiTouchHandler = new MultiTouchHandler(_virtualScreen);
+                }
+                return _multiTouchHandler;
+            }
         }
     }
 }
