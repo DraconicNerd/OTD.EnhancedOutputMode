@@ -5,11 +5,12 @@ using OpenTabletDriver.Plugin.Tablet;
 using VoiDPlugins.Library.VMulti;
 using VoiDPlugins.Library.VMulti.Device;
 using VoiDPlugins.Library.VoiD;
+using OTD.EnhancedOutputMode.Handlers;
 using static OTD.EnhancedOutputMode.Constants.VMultiModeConstants;
 
 namespace OTD.EnhancedOutputMode.Pointers.VMulti
 {
-    public unsafe class VMultiAbsolutePointer : IAbsolutePointer, ISynchronousPointer
+    public unsafe class VMultiAbsolutePointer : IAbsolutePointer, ISynchronousPointer, IPenActionHandler, IMouseButtonHandler
     {
         private readonly AbsoluteInputReport* _rawPointer;
         private readonly VMultiInstance<AbsoluteInputReport> _instance;
@@ -56,5 +57,13 @@ namespace OTD.EnhancedOutputMode.Pointers.VMulti
                 _instance.Write();
             }
         }
+
+        // IPenActionHandler implementation for adaptive bindings
+        public void Activate(PenAction action) => VMultiButtonHandler.Activate(action, _instance);
+        public void Deactivate(PenAction action) => VMultiButtonHandler.Deactivate(action, _instance);
+        
+        // IMouseButtonHandler implementation for adaptive bindings
+        public void MouseDown(MouseButton button) => VMultiButtonHandler.MouseDown(button, _instance);
+        public void MouseUp(MouseButton button) => VMultiButtonHandler.MouseUp(button, _instance);
     }
 }

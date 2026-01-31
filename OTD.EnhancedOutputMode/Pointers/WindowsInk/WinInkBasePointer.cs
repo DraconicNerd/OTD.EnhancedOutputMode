@@ -1,7 +1,9 @@
 using System.Numerics;
+using OpenTabletDriver.Plugin;
 using OpenTabletDriver.Plugin.Platform.Display;
 using OpenTabletDriver.Plugin.Platform.Pointer;
 using OpenTabletDriver.Plugin.Tablet;
+using OTD.EnhancedOutputMode.Enums;
 using OTD.EnhancedOutputMode.Handlers;
 using VoiDPlugins.Library.VMulti;
 using VoiDPlugins.Library.VMulti.Device;
@@ -10,9 +12,10 @@ using static OTD.EnhancedOutputMode.Constants.WindowsInkConstants;
 
 namespace OTD.EnhancedOutputMode.Pointers.WindowsInk
 {
-    public unsafe abstract class WinInkBasePointer : IPressureHandler, ITiltHandler, IEraserHandler, ISynchronousPointer
+    public unsafe abstract class WinInkBasePointer : IPressureHandler, ITiltHandler, IEraserHandler, ISynchronousPointer, IPenActionHandler
     {
         private readonly Vector2 _conversionFactor;
+        private readonly int _pressureConv;
         private readonly IVirtualScreen _screen;
         private ThinOSPointer? _osPointer;
         private Vector2 _internalPos;
@@ -44,9 +47,25 @@ namespace OTD.EnhancedOutputMode.Pointers.WindowsInk
                 SharedStore.SetOrAdd(TIP_PRESSED, false);
             }
 
+            if (Instance.Extended)
+            {
+                Log.Write(name, "Using extended VMulti digitizer");
+                _pressureConv = 16383;
+            }
+            else
+            {
+                _pressureConv = 8191;
+            }
+
             VMultiInstance<DigitizerInputReport> createInstance()
             {
-                return new VMultiInstance<DigitizerInputReport>(name, new DigitizerInputReport());
+                return new VMultiInstance<DigitizerInputReport>(name, extended =>
+                {
+                    if (extended)
+                        return DigitizerInputReport.Extended();
+                    else
+                        return DigitizerInputReport.Normal();
+                });
             }
         }
 
@@ -60,7 +79,7 @@ namespace OTD.EnhancedOutputMode.Pointers.WindowsInk
 
         public void SetPressure(float percentage)
         {
-            RawPointer->Pressure = (ushort)(percentage * 16383);
+            RawPointer->Pressure = (ushort)(percentage * _pressureConv);
         }
 
         public void SetTilt(Vector2 tilt)
@@ -89,6 +108,48 @@ namespace OTD.EnhancedOutputMode.Pointers.WindowsInk
                 Instance.Write();
             }
         }
+
+        /// <summary>
+        /// Activate (button press) the appropriate action for the output mode - IPenActionHandler
+        /// </summary>
+        public void Activate(PenAction action)
+        {
+            if (GetCode(action) is { } code)
+            {
+                Instance.EnableButtonBit(code);
+                if (code == (int)WindowsInkButtonFlags.Press)
+                {
+                    SharedStore.Set(TIP_PRESSED, true);
+                }
+                Instance.Write();
+            }
+        }
+
+        /// <summary>
+        /// Deactivate (button release) the appropriate action for the output mode - IPenActionHandler
+        /// </summary>
+        public void Deactivate(PenAction action)
+        {
+            if (GetCode(action) is { } code)
+            {
+                Instance.DisableButtonBit(code);
+                if (code == (int)WindowsInkButtonFlags.Press)
+                {
+                    SharedStore.Set(TIP_PRESSED, false);
+                }
+                Instance.Write();
+            }
+        }
+
+        private static int? GetCode(PenAction action) => action switch
+        {
+            PenAction.Tip => (int)WindowsInkButtonFlags.Press,
+            PenAction.Eraser => (int)WindowsInkButtonFlags.Press,
+            PenAction.BarrelButton1 => (int)WindowsInkButtonFlags.Barrel,
+            PenAction.BarrelButton2 => (int)WindowsInkButtonFlags.Barrel,
+            PenAction.BarrelButton3 => (int)WindowsInkButtonFlags.Barrel,
+            _ => null,
+        };
 
         protected Vector2 Convert(Vector2 pos)
         {
