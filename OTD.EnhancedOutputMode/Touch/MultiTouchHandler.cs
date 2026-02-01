@@ -5,6 +5,7 @@ using System.Runtime.InteropServices;
 using OpenTabletDriver.Plugin;
 using OpenTabletDriver.Plugin.Platform.Display;
 using OpenTabletDriver.Plugin.Tablet.Touch;
+using OTD.EnhancedOutputMode.Lib.Tools;
 
 namespace OTD.EnhancedOutputMode.Touch
 {
@@ -137,6 +138,35 @@ namespace OTD.EnhancedOutputMode.Touch
                     // Transform the touch position from tablet to screen coordinates
                     var tabletPos = new Vector2(point.Position.X, point.Position.Y);
                     var screenPos = Vector2.Transform(tabletPos, transformMatrix);
+
+                    // Apply Monitor Toggle multiplier and offset if the plugin is active
+                    // This ensures touch follows pen when monitor is toggled
+                    var monitorOffset = MonitorToggleDetector.GetOffset();
+                    var monitorMultiplier = MonitorToggleDetector.GetMultiplier();
+                    
+                    // Apply multiplier (scales around display center)
+                    if (monitorMultiplier != Vector2.One)
+                    {
+                        var displaySize = max - min;
+                        
+                        // Convert to unit coords (-1 to 1) relative to display
+                        var unitPos = new Vector2(
+                            (screenPos.X - min.X) / displaySize.X * 2 - 1,
+                            (screenPos.Y - min.Y) / displaySize.Y * 2 - 1
+                        );
+                        
+                        // Apply multiplier in unit space
+                        unitPos *= monitorMultiplier;
+                        
+                        // Convert back to screen coordinates
+                        screenPos = new Vector2(
+                            (unitPos.X + 1) / 2 * displaySize.X + min.X,
+                            (unitPos.Y + 1) / 2 * displaySize.Y + min.Y
+                        );
+                    }
+                    
+                    // Apply offset (shifts to different monitor)
+                    screenPos += monitorOffset;
 
                     // Clamp to absolute screen bounds to prevent Error 87
                     int screenX = Math.Clamp((int)screenPos.X, _screenMinX, _screenMaxX);
